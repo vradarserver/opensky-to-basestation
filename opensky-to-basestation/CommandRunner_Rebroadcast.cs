@@ -20,9 +20,10 @@ namespace OpenSkyToBaseStation
 {
     class CommandRunner_Rebroadcast : CommandRunner
     {
-        private HttpClient _HttpClient;
-        private Timer      _Timer;
-        private string     _RequestUrl;
+        private HttpClient      _HttpClient;
+        private Timer           _Timer;
+        private string          _RequestUrl;
+        private NetworkListener _NetworkListener;
 
         public override bool Run()
         {
@@ -47,6 +48,16 @@ namespace OpenSkyToBaseStation
             Console.WriteLine($"Interval:   {Options.IntervalSeconds} seconds");
             Console.WriteLine($"Icao24s:    {(Options.Icao24s.Count == 0 ? "all" : String.Join("-", Options.Icao24s))}");
             Console.WriteLine($"Bounds:     {(!Options.HasBoundingBox ? "entire earth" : Options.BoundsDescription)}");
+            Console.WriteLine($"Listen on:  {Options.Port}");
+
+            _NetworkListener = new NetworkListener() {
+                Port = Options.Port,
+            };
+            Task.Run(() => {
+                _NetworkListener
+                    .AcceptConnections()
+                    .ContinueWith(NetworkListener_Error, TaskContinuationOptions.OnlyOnFaulted);
+            });
 
             _Timer = new Timer() {
                 AutoReset = false,
@@ -57,7 +68,8 @@ namespace OpenSkyToBaseStation
             _Timer.Start();
 
             Console.WriteLine();
-            Console.WriteLine("Press Q to quit:");
+            Console.WriteLine("Press Q to quit");
+            Console.WriteLine();
             while(Console.ReadKey(intercept: true).Key != ConsoleKey.Q) {
                 ;
             }
@@ -66,6 +78,11 @@ namespace OpenSkyToBaseStation
             _Timer = null;
 
             return true;
+        }
+
+        private void NetworkListener_Error(Task task)
+        {
+            Console.WriteLine($"Network listener faulted, exception is: {task?.Exception}");
         }
 
         private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -83,8 +100,6 @@ namespace OpenSkyToBaseStation
             }
         }
 
-        private int _IndicatorPhase;
-
         private async Task FetchFromOpenSky()
         {
             var response = await _HttpClient.GetAsync(Options.RootUrl + _RequestUrl);
@@ -93,22 +108,30 @@ namespace OpenSkyToBaseStation
             } else {
                 var jsonText = await response.Content.ReadAsStringAsync();
                 if(jsonText != null) {
-                    var ch = '\0';
-                    switch(_IndicatorPhase) {
-                        case 0:
-                        case 4: ch = '|'; break;
-                        case 1:
-                        case 5: ch = '/'; break;
-                        case 2:
-                        case 6: ch = '-'; break;
-                        case 3:
-                        case 7: ch = '\\'; break;
-                    }
-                    Console.Write(ch);
-                    Console.CursorLeft--;
-                    _IndicatorPhase = ++_IndicatorPhase % 8;
+                    ShowOpenSkyStateFetched();
+                    _NetworkListener.SendBytes(Encoding.UTF8.GetBytes(jsonText));
                 }
             }
+        }
+
+        private int _IndicatorPhase;
+
+        private void ShowOpenSkyStateFetched()
+        {
+            var ch = '\0';
+            switch(_IndicatorPhase) {
+                case 0:
+                case 4: ch = '|'; break;
+                case 1:
+                case 5: ch = '/'; break;
+                case 2:
+                case 6: ch = '-'; break;
+                case 3:
+                case 7: ch = '\\'; break;
+            }
+            Console.Write(ch);
+            Console.CursorLeft--;
+            _IndicatorPhase = ++_IndicatorPhase % 8;
         }
     }
 }

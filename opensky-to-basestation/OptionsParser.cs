@@ -164,6 +164,9 @@ namespace OpenSkyToBaseStation
             Console.WriteLine($"  -lamax        <float>    Upper bound for latitude [{defaults.LatitudeLow}]");
             Console.WriteLine($"  -lomin        <float>    Lower bound for longitude [{defaults.LongitudeHigh}]");
             Console.WriteLine($"  -lomax        <float>    Upper bound for longitude [{defaults.LongitudeLow}]");
+            Console.WriteLine();
+            Console.WriteLine($"REBROADCAST SERVER");
+            Console.WriteLine($"  -port         <1-65535>  The port to listen to for incoming connections [{defaults.Port}]");
 
             if(!String.IsNullOrEmpty(message)) {
                 Console.WriteLine();

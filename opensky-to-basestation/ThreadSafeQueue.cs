@@ -10,47 +10,34 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace OpenSkyToBaseStation
 {
-    class Options
+    class ThreadSafeQueue
     {
-        public string UserName { get; set; }
+        private Queue<byte[]> _BytesQueue = new Queue<byte[]>();
 
-        public string Password { get; set; }
+        private object _SyncLock = new Object();
 
-        public bool IsAnonymous => String.IsNullOrWhiteSpace(UserName);
+        public void Enqueue(byte[] bytes)
+        {
+            lock(_SyncLock) {
+                _BytesQueue.Enqueue(bytes);
+            }
+        }
 
-        public string AnonRootUrl { get; set; } = "https://opensky-network.org/api";
+        public byte[] Dequeue()
+        {
+            byte[] result = null;
 
-        public string UserRootUrl { get; set; } = "https://{user}:{password}@opensky-network.org/api";
+            lock(_SyncLock) {
+                if(_BytesQueue.Count > 0) {
+                    result = _BytesQueue.Dequeue();
+                }
+            }
 
-        public string RootUrl => IsAnonymous ? AnonRootUrl : UserRootUrl.Replace("{user}", UserName).Replace("{password}", Password);
-
-        public string ObsfucatedRootUrl => IsAnonymous ? AnonRootUrl : UserRootUrl.Replace("{user}", UserName).Replace("{password}", new String('*', Password?.Length ?? 0));
-
-        public int AnonymousIntervalSeconds { get; set; } = 10;
-
-        public int UserIntervalSeconds { get; set; } = 5;
-
-        public int IntervalSeconds => IsAnonymous ? AnonymousIntervalSeconds : UserIntervalSeconds;
-
-        public Command Command { get; set; }
-
-        public List<string> Icao24s { get; } = new List<string>();
-
-        public double? LatitudeHigh { get; set; }
-
-        public double? LatitudeLow { get; set; }
-
-        public double? LongitudeHigh { get; set; }
-
-        public double? LongitudeLow { get; set; }
-
-        public bool HasBoundingBox => LatitudeHigh != null && LatitudeLow != null && LongitudeHigh != null && LongitudeLow != null;
-
-        public string BoundsDescription => !HasBoundingBox ? "" : $"lamin {LatitudeLow} lomin {LongitudeLow} lamax {LatitudeHigh} lomax {LongitudeHigh}";
-
-        public int Port { get; set; } = 20003;
+            return result;
+        }
     }
 }
