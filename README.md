@@ -37,3 +37,10 @@ them into a BaseStation format network feed.
 | Option              | Value    | Description |
 | -                   | -        | -           |
 | ```-jsonFileName``` | filename | The full path to a file that the OpenSky JSON will be saved to |
+
+## Compilation Pre-requisites
+
+You will need the latest version of Visual Studio 2019 Community edition. When you choose the components to install you need
+to tick the option for **.NET desktop development**. In the **Individual Components** tab make sure that the ```.NET Core 3.1 SDK``` is ticked. Once .NET Core 3.1 is no longer the bleeding edge you might see the option called ```.NET Core 3.1 Runtime``` instead.
+
+
