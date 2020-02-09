@@ -24,7 +24,7 @@ namespace OpenSkyToBaseStation
     class CommandRunner_Rebroadcast : CommandRunner
     {
         private HttpClient                  _HttpClient;
-        private Timer                       _Timer;
+        private Timer                       _CallOpenSkyTimer;
         private string                      _RequestUrl;
         private NetworkListener             _NetworkListener;
         private AircraftList                _AircraftList = new AircraftList();
@@ -32,8 +32,75 @@ namespace OpenSkyToBaseStation
 
         public override bool Run()
         {
-            _HttpClient = new HttpClient();
+            Console.WriteLine($"Rebroadcast OpenSky state");
+            Console.WriteLine($"User:       {(Options.IsAnonymous ? "Anonymous" : Options.UserName)}");
+            Console.WriteLine($"Root URL:   {Options.ObsfucatedRootUrl}");
+            Console.WriteLine($"Interval:   {Options.IntervalSeconds} seconds");
+            Console.WriteLine($"Icao24s:    {(Options.Icao24s.Count == 0 ? "all" : String.Join("-", Options.Icao24s))}");
+            Console.WriteLine($"Bounds:     {(!Options.HasBoundingBox ? "entire earth" : Options.BoundsDescription)}");
+            Console.WriteLine($"Listen on:  {Options.Port}");
 
+            if(!String.IsNullOrEmpty(Options.OpenSkyJsonFileName)) {
+                Console.WriteLine($"JSON save:  {Options.OpenSkyJsonFileName}");
+                CreateDiagnosticJsonSaveFolder();
+            }
+
+            StartNetworkListener();
+            StartCallingOpenSkyApi();
+            SuspendThreadUntilUserWantsToQuit();
+            Cleanup();
+
+            return true;
+        }
+
+        private void StartNetworkListener()
+        {
+            _NetworkListener = new NetworkListener() {
+                Port = Options.Port,
+            };
+            Task.Run(() => {
+                _NetworkListener
+                    .AcceptConnections()
+                    .ContinueWith(NetworkListener_Error, TaskContinuationOptions.OnlyOnFaulted);
+            });
+        }
+
+        private void NetworkListener_Error(Task task)
+        {
+            Console.WriteLine($"Network listener faulted: {task?.Exception}");
+        }
+
+        private void StartCallingOpenSkyApi()
+        {
+            _HttpClient = new HttpClient();
+            _RequestUrl = BuildRequestUrl();
+            _CallOpenSkyTimer = new Timer() {
+                AutoReset = false,
+                Enabled = false,
+                Interval = 1,
+            };
+            _CallOpenSkyTimer.Elapsed += CallOpenSkyTimer_Elapsed;
+            _CallOpenSkyTimer.Start();
+        }
+
+        private static void SuspendThreadUntilUserWantsToQuit()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Press Q to quit");
+            Console.WriteLine();
+            while(Console.ReadKey(intercept: true).Key != ConsoleKey.Q) {
+                ;
+            }
+        }
+
+        private void Cleanup()
+        {
+            _CallOpenSkyTimer.Enabled = false;
+            _CallOpenSkyTimer = null;
+        }
+
+        private string BuildRequestUrl()
+        {
             var queryString = new StringBuilder();
             foreach(var icao24 in Options.Icao24s) {
                 UrlHelper.AppendQueryString(queryString, "icao24", icao24);
@@ -44,68 +111,30 @@ namespace OpenSkyToBaseStation
                 UrlHelper.AppendQueryString(queryString, "lamax", Options.LatitudeHigh.Value.ToString(CultureInfo.InvariantCulture));
                 UrlHelper.AppendQueryString(queryString, "lomax", Options.LongitudeHigh.Value.ToString(CultureInfo.InvariantCulture));
             }
-            _RequestUrl = $"/states/all{queryString}";
 
-            Console.WriteLine($"Rebroadcast OpenSky state");
-            Console.WriteLine($"User:       {(Options.IsAnonymous ? "Anonymous" : Options.UserName)}");
-            Console.WriteLine($"Root URL:   {Options.ObsfucatedRootUrl}");
-            Console.WriteLine($"Endpoint:   {_RequestUrl}");
-            Console.WriteLine($"Interval:   {Options.IntervalSeconds} seconds");
-            Console.WriteLine($"Icao24s:    {(Options.Icao24s.Count == 0 ? "all" : String.Join("-", Options.Icao24s))}");
-            Console.WriteLine($"Bounds:     {(!Options.HasBoundingBox ? "entire earth" : Options.BoundsDescription)}");
-            Console.WriteLine($"Listen on:  {Options.Port}");
-
-            if(!String.IsNullOrEmpty(Options.OpenSkyJsonFileName)) {
-                var folder = Path.GetDirectoryName(Options.OpenSkyJsonFileName);
-                if(!Directory.Exists(folder)) {
-                    Directory.CreateDirectory(folder);
-                }
-                Console.WriteLine($"JSON save:  {Options.OpenSkyJsonFileName}");
-            }
-
-            _NetworkListener = new NetworkListener() {
-                Port = Options.Port,
-            };
-            Task.Run(() => {
-                _NetworkListener
-                    .AcceptConnections()
-                    .ContinueWith(NetworkListener_Error, TaskContinuationOptions.OnlyOnFaulted);
-            });
-
-            _Timer = new Timer() {
-                AutoReset = false,
-                Enabled =   false,
-                Interval =  1,
-            };
-            _Timer.Elapsed += Timer_Elapsed;
-            _Timer.Start();
-
-            Console.WriteLine();
-            Console.WriteLine("Press Q to quit");
-            Console.WriteLine();
-            while(Console.ReadKey(intercept: true).Key != ConsoleKey.Q) {
-                ;
-            }
-
-            _Timer.Enabled = false;
-            _Timer = null;
-
-            return true;
+            return Options.RootUrl + (
+                !Options.RootUrl.EndsWith('/')
+                ? $"/states/all{queryString}"
+                :  $"states/all{queryString}"
+            );
         }
 
-        private void NetworkListener_Error(Task task)
+        private void CreateDiagnosticJsonSaveFolder()
         {
-            Console.WriteLine($"Network listener faulted, exception is: {task?.Exception}");
+            var folder = Path.GetDirectoryName(Options.OpenSkyJsonFileName);
+            if(!Directory.Exists(folder)) {
+                Directory.CreateDirectory(folder);
+            }
         }
 
-        private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        private async void CallOpenSkyTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             try {
                 await FetchFromOpenSky();
             } catch(Exception ex) {
                 Console.WriteLine($"Caught exception in fetching OpenSky: {ex}");
             } finally {
-                var timer = _Timer;
+                var timer = _CallOpenSkyTimer;
                 if(timer != null) {
                     timer.Interval = Options.IntervalSeconds * 1000;
                     timer.Start();
@@ -115,30 +144,33 @@ namespace OpenSkyToBaseStation
 
         private async Task FetchFromOpenSky()
         {
-            var response = await _HttpClient.GetAsync(Options.RootUrl + _RequestUrl);
+            var response = await _HttpClient.GetAsync(_RequestUrl);
             if(!response.IsSuccessStatusCode) {
                 Console.WriteLine($"Warning: OpenSky fetch failed, status {response.StatusCode}");
             } else {
                 var jsonText = await response.Content.ReadAsStringAsync();
                 if(jsonText != null) {
                     ShowOpenSkyStateFetched();
-
-                    if(!String.IsNullOrEmpty(Options.OpenSkyJsonFileName)) {
-                        try {
-                            File.WriteAllText(Options.OpenSkyJsonFileName, jsonText);
-                        } catch(Exception ex) {
-                            Console.WriteLine($"Could not save JSON to {Options.OpenSkyJsonFileName}: {ex.Message}");
-                        }
-                    }
+                    SaveJsonToDiagnosticFile(jsonText);
 
                     var allStateVectors = JsonConvert.DeserializeObject<AllStateVectorsResponseModel>(jsonText);
                     var versionBeforeChanges = _AircraftList.Version;
                     _AircraftList.ApplyStateVectors(allStateVectors.StateVectors);
-
                     var aircraftList = _AircraftList.GetCloneSnapshot();
                     _NetworkListener.SendBytes(
                         _MessageGenerator.GenerateMessageBytes(aircraftList, versionBeforeChanges)
                     );
+                }
+            }
+        }
+
+        private void SaveJsonToDiagnosticFile(string jsonText)
+        {
+            if(!String.IsNullOrEmpty(Options.OpenSkyJsonFileName)) {
+                try {
+                    File.WriteAllText(Options.OpenSkyJsonFileName, jsonText);
+                } catch(Exception ex) {
+                    Console.WriteLine($"Could not save JSON to {Options.OpenSkyJsonFileName}: {ex.Message}");
                 }
             }
         }
@@ -149,18 +181,14 @@ namespace OpenSkyToBaseStation
         {
             var ch = '\0';
             switch(_IndicatorPhase) {
-                case 0:
-                case 4: ch = '|'; break;
-                case 1:
-                case 5: ch = '/'; break;
-                case 2:
-                case 6: ch = '-'; break;
-                case 3:
-                case 7: ch = '\\'; break;
+                case 0: ch = '|'; break;
+                case 1: ch = '/'; break;
+                case 2: ch = '-'; break;
+                case 3: ch = '\\'; break;
             }
             Console.Write(ch);
             Console.CursorLeft--;
-            _IndicatorPhase = ++_IndicatorPhase % 8;
+            _IndicatorPhase = ++_IndicatorPhase % 4;
         }
     }
 }
