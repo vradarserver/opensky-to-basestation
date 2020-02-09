@@ -9,34 +9,32 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OF THE SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
-using System.Collections.Generic;
+using System.Threading;
 
 namespace OpenSkyToBaseStation
 {
-    class ThreadSafeQueue
+    class VersionedValue<T>
     {
-        private Queue<byte[]> _BytesQueue = new Queue<byte[]>();
+        public long Version { get; private set; }
 
-        private object _SyncLock = new Object();
+        public T Value { get; private set; }
 
-        public void Enqueue(byte[] bytes)
+        public static implicit operator T(VersionedValue<T> versionedValue) => versionedValue.Value;
+
+        public long UpdateValue(T value, long newVersion)
         {
-            lock(_SyncLock) {
-                _BytesQueue.Enqueue(bytes);
-            }
-        }
-
-        public byte[] Dequeue()
-        {
-            byte[] result = null;
-
-            lock(_SyncLock) {
-                if(_BytesQueue.Count > 0) {
-                    result = _BytesQueue.Dequeue();
-                }
+            if(!Object.Equals(Value, value)) {
+                // Do not swap the order of these - version must be assigned after Value
+                Value = value;
+                Thread.MemoryBarrier();
+                Version = newVersion;
             }
 
-            return result;
+            return Version;
         }
+
+        public override string ToString() => Value?.ToString() ?? "";
+
+        public VersionedValue<T> Clone() => (VersionedValue<T>)MemberwiseClone();
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright © 2020 onwards, Andrew Whewell
+// Copyright � 2010 onwards, Andrew Whewell
 // All rights reserved.
 //
 // Redistribution and use of this software in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -10,33 +10,58 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace OpenSkyToBaseStation
+namespace VirtualRadar.Interface.BaseStation
 {
-    class ThreadSafeQueue
+    /// <summary>
+    /// An enumeration of the different type of Transmission message types.
+    /// </summary>
+    public enum BaseStationTransmissionType
     {
-        private Queue<byte[]> _BytesQueue = new Queue<byte[]>();
+        /// <summary>
+        /// The message is not a Transmission message.
+        /// </summary>
+        None,
 
-        private object _SyncLock = new Object();
+        /// <summary>
+        /// A type 1 message.
+        /// </summary>
+        IdentificationAndCategory,
 
-        public void Enqueue(byte[] bytes)
-        {
-            lock(_SyncLock) {
-                _BytesQueue.Enqueue(bytes);
-            }
-        }
+        /// <summary>
+        /// A type 2 message.
+        /// </summary>
+        SurfacePosition,
 
-        public byte[] Dequeue()
-        {
-            byte[] result = null;
+        /// <summary>
+        /// A type 3 message.
+        /// </summary>
+        AirbornePosition,
 
-            lock(_SyncLock) {
-                if(_BytesQueue.Count > 0) {
-                    result = _BytesQueue.Dequeue();
-                }
-            }
+        /// <summary>
+        /// A type 4 message.
+        /// </summary>
+        AirborneVelocity,
 
-            return result;
-        }
+        /// <summary>
+        /// A type 5 message.
+        /// </summary>
+        SurveillanceAlt,
+
+        /// <summary>
+        /// A type 6 message.
+        /// </summary>
+        SurveillanceId,
+
+        /// <summary>
+        /// A type 7 message.
+        /// </summary>
+        AirToAir,
+
+        /// <summary>
+        /// A type 8 message.
+        /// </summary>
+        AllCallReply,
     }
 }

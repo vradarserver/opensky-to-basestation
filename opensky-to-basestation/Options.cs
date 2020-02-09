@@ -52,5 +52,7 @@ namespace OpenSkyToBaseStation
         public string BoundsDescription => !HasBoundingBox ? "" : $"lamin {LatitudeLow} lomin {LongitudeLow} lamax {LatitudeHigh} lomax {LongitudeHigh}";
 
         public int Port { get; set; } = 20003;
+
+        public string OpenSkyJsonFileName  { get; set; }
     }
 }

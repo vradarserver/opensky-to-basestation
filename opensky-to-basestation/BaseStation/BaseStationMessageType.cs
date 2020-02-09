@@ -1,4 +1,4 @@
-﻿// Copyright © 2020 onwards, Andrew Whewell
+// Copyright � 2010 onwards, Andrew Whewell
 // All rights reserved.
 //
 // Redistribution and use of this software in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -10,33 +10,48 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace OpenSkyToBaseStation
+namespace VirtualRadar.Interface.BaseStation
 {
-    class ThreadSafeQueue
+    /// <summary>
+    /// An enumeration of the different types of BaseStation message.
+    /// </summary>
+    public enum BaseStationMessageType
     {
-        private Queue<byte[]> _BytesQueue = new Queue<byte[]>();
+        /// <summary>
+        /// The message could not be translated.
+        /// </summary>
+        Unknown,
 
-        private object _SyncLock = new Object();
+        /// <summary>
+        /// A MSG message.
+        /// </summary>
+        Transmission,
 
-        public void Enqueue(byte[] bytes)
-        {
-            lock(_SyncLock) {
-                _BytesQueue.Enqueue(bytes);
-            }
-        }
+        /// <summary>
+        /// A STA message.
+        /// </summary>
+        StatusChange,
 
-        public byte[] Dequeue()
-        {
-            byte[] result = null;
+        /// <summary>
+        /// An AIR message.
+        /// </summary>
+        NewAircraft,
 
-            lock(_SyncLock) {
-                if(_BytesQueue.Count > 0) {
-                    result = _BytesQueue.Dequeue();
-                }
-            }
+        /// <summary>
+        /// An ID message.
+        /// </summary>
+        NewIdentifier,
 
-            return result;
-        }
+        /// <summary>
+        /// A SEL message.
+        /// </summary>
+        UserClicked,
+
+        /// <summary>
+        /// A CLK message.
+        /// </summary>
+        UserDoubleClicked,
     }
 }

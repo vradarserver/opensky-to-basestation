@@ -9,27 +9,32 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OF THE SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 
 namespace OpenSkyToBaseStation.OpenSky
 {
-    class AllStateVectorsRequestModel
+    /// <summary>
+    /// Parses semi-typed objects out of the state vector array into fully-typed objects.
+    /// </summary>
+    /// <remarks>
+    /// The JSON parser does not have enough information to reliably figure out the types for
+    /// the values in a state vector array. This takes the objects in the state vector array
+    /// and forces them into their correct type.
+    /// </remarks>
+    static class StateVectorConvert
     {
-        public DateTime? Time { get; set; }
+        public static bool? ToBool(object rawValue) => rawValue == null ? (bool?)null : (bool)Convert.ChangeType(rawValue, typeof(bool));
 
-        public double? TimeAsSecondsSinceUnixEpoch => Time == null ? (double?)null : (Time - Moments.UnixEpoch).Value.TotalSeconds;
+        public static double? ToDouble(object rawValue) => rawValue == null ? (double?)null : (double)Convert.ChangeType(rawValue, typeof(double));
 
-        public string[] Icao24s { get; set; }
+        public static float? ToFloat(object rawValue) => rawValue == null ? (float?)null : (float)Convert.ChangeType(rawValue, typeof(float));
 
-        public double? LatitudeLow { get; set; }
+        public static int? ToInt(object rawValue) => rawValue == null ? (int?)null : (int)Convert.ChangeType(rawValue, typeof(int));
 
-        public double? LatitudeHigh { get; set; }
+        public static long? ToLong(object rawValue) => rawValue == null ? (long?)null : (long)Convert.ChangeType(rawValue, typeof(long));
 
-        public double? LongitudeLow { get; set; }
-
-        public double? LongitudeHigh { get; set; }
-
-        public string UserName { get; set; }
-
-        public string Password { get; set; }
+        public static string ToString(object rawValue) => rawValue == null ? null : (string)Convert.ChangeType(rawValue, typeof(string));
     }
 }

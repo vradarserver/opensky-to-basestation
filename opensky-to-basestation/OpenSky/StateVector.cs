@@ -26,12 +26,12 @@ namespace OpenSkyToBaseStation.OpenSky
         public string OriginCountry { get; set; }
 
         [DataMember(Name = "time_position")]
-        public double? UnixEpochSecondsOfLastPosition { get; set; }
+        public long? UnixEpochSecondsOfLastPosition { get; set; }
 
         public DateTime? TimeOfLastPosition => UnixEpochSecondsOfLastPosition == null ? (DateTime?)null : Moments.UnixEpoch.AddSeconds(UnixEpochSecondsOfLastPosition.Value);
 
         [DataMember(Name = "last_contact")]
-        public double UnixEpochSecondsOfLastMessage { get; set; }
+        public long UnixEpochSecondsOfLastMessage { get; set; }
 
         public DateTime TimeOfLastMessage => Moments.UnixEpoch.AddSeconds(UnixEpochSecondsOfLastMessage);
 

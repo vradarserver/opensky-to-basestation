@@ -73,6 +73,9 @@ namespace OpenSkyToBaseStation
                     case "-lomin":
                         result.LongitudeLow = ParseDouble(UseNextArg(arg, nextArg, ref i));
                         break;
+                    case "-jsonfilename":
+                        result.OpenSkyJsonFileName = UseNextArg(arg, nextArg, ref i);
+                        break;
                     case "-password":
                         result.Password = UseNextArg(arg, nextArg, ref i);
                         break;
@@ -167,6 +170,9 @@ namespace OpenSkyToBaseStation
             Console.WriteLine();
             Console.WriteLine($"REBROADCAST SERVER");
             Console.WriteLine($"  -port         <1-65535>  The port to listen to for incoming connections [{defaults.Port}]");
+            Console.WriteLine();
+            Console.WriteLine($"DIAGNOSTICS");
+            Console.WriteLine($"  -jsonFileName <filename> The full path to a file that the OpenSky JSON will be saved to [{defaults.OpenSkyJsonFileName}]");
 
             if(!String.IsNullOrEmpty(message)) {
                 Console.WriteLine();

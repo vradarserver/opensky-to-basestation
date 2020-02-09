@@ -11,19 +11,24 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using Newtonsoft.Json;
+using OpenSkyToBaseStation.OpenSky;
 
 namespace OpenSkyToBaseStation
 {
     class CommandRunner_Rebroadcast : CommandRunner
     {
-        private HttpClient      _HttpClient;
-        private Timer           _Timer;
-        private string          _RequestUrl;
-        private NetworkListener _NetworkListener;
+        private HttpClient                  _HttpClient;
+        private Timer                       _Timer;
+        private string                      _RequestUrl;
+        private NetworkListener             _NetworkListener;
+        private AircraftList                _AircraftList = new AircraftList();
+        private BaseStationMessageGenerator _MessageGenerator = new BaseStationMessageGenerator();
 
         public override bool Run()
         {
@@ -49,6 +54,14 @@ namespace OpenSkyToBaseStation
             Console.WriteLine($"Icao24s:    {(Options.Icao24s.Count == 0 ? "all" : String.Join("-", Options.Icao24s))}");
             Console.WriteLine($"Bounds:     {(!Options.HasBoundingBox ? "entire earth" : Options.BoundsDescription)}");
             Console.WriteLine($"Listen on:  {Options.Port}");
+
+            if(!String.IsNullOrEmpty(Options.OpenSkyJsonFileName)) {
+                var folder = Path.GetDirectoryName(Options.OpenSkyJsonFileName);
+                if(!Directory.Exists(folder)) {
+                    Directory.CreateDirectory(folder);
+                }
+                Console.WriteLine($"JSON save:  {Options.OpenSkyJsonFileName}");
+            }
 
             _NetworkListener = new NetworkListener() {
                 Port = Options.Port,
@@ -109,7 +122,23 @@ namespace OpenSkyToBaseStation
                 var jsonText = await response.Content.ReadAsStringAsync();
                 if(jsonText != null) {
                     ShowOpenSkyStateFetched();
-                    _NetworkListener.SendBytes(Encoding.UTF8.GetBytes(jsonText));
+
+                    if(!String.IsNullOrEmpty(Options.OpenSkyJsonFileName)) {
+                        try {
+                            File.WriteAllText(Options.OpenSkyJsonFileName, jsonText);
+                        } catch(Exception ex) {
+                            Console.WriteLine($"Could not save JSON to {Options.OpenSkyJsonFileName}: {ex.Message}");
+                        }
+                    }
+
+                    var allStateVectors = JsonConvert.DeserializeObject<AllStateVectorsResponseModel>(jsonText);
+                    var versionBeforeChanges = _AircraftList.Version;
+                    _AircraftList.ApplyStateVectors(allStateVectors.StateVectors);
+
+                    var aircraftList = _AircraftList.GetCloneSnapshot();
+                    _NetworkListener.SendBytes(
+                        _MessageGenerator.GenerateMessageBytes(aircraftList, versionBeforeChanges)
+                    );
                 }
             }
         }

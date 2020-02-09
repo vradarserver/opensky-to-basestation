@@ -1,4 +1,4 @@
-﻿// Copyright © 2020 onwards, Andrew Whewell
+// Copyright � 2010 onwards, Andrew Whewell
 // All rights reserved.
 //
 // Redistribution and use of this software in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -10,33 +10,43 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace OpenSkyToBaseStation
+namespace VirtualRadar.Interface.BaseStation
 {
-    class ThreadSafeQueue
+    /// <summary>
+    /// An enumeration of the different status codes that can be transmitted by a StatusChange message.
+    /// </summary>
+    public enum BaseStationStatusCode
     {
-        private Queue<byte[]> _BytesQueue = new Queue<byte[]>();
+        /// <summary>
+        /// The message is not a StatusChange message.
+        /// </summary>
+        None,
 
-        private object _SyncLock = new Object();
+        /// <summary>
+        /// The aircraft is no longer transmitting its position.
+        /// </summary>
+        PositionLost,
 
-        public void Enqueue(byte[] bytes)
-        {
-            lock(_SyncLock) {
-                _BytesQueue.Enqueue(bytes);
-            }
-        }
+        /// <summary>
+        /// The aircraft's signal can no longer be picked up.
+        /// </summary>
+        SignalLost,
 
-        public byte[] Dequeue()
-        {
-            byte[] result = null;
+        /// <summary>
+        /// The aircraft has been removed from BaseStation's display.
+        /// </summary>
+        Remove,
 
-            lock(_SyncLock) {
-                if(_BytesQueue.Count > 0) {
-                    result = _BytesQueue.Dequeue();
-                }
-            }
+        /// <summary>
+        /// Don't know what the difference is between this and Remove.
+        /// </summary>
+        Delete,
 
-            return result;
-        }
+        /// <summary>
+        /// The aircraft's signal is being picked up.
+        /// </summary>
+        OK,
     }
 }

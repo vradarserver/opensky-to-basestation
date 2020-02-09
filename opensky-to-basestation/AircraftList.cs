@@ -10,29 +10,57 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using OpenSkyToBaseStation.OpenSky;
 
 namespace OpenSkyToBaseStation
 {
-    class ThreadSafeQueue
+    class AircraftList
     {
-        private Queue<byte[]> _BytesQueue = new Queue<byte[]>();
+        private Dictionary<string, Aircraft> _Icao24ToAircraftMap = new Dictionary<string, Aircraft>(StringComparer.OrdinalIgnoreCase);
+        private object _SyncLock = new object();
 
-        private object _SyncLock = new Object();
+        private long _Version;
+        public long Version => _Version;
 
-        public void Enqueue(byte[] bytes)
+        public void ApplyStateVectors(IEnumerable<StateVector> stateVectors)
         {
+            var noLongerTracked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             lock(_SyncLock) {
-                _BytesQueue.Enqueue(bytes);
+                ++_Version;
+
+                foreach(var key in _Icao24ToAircraftMap.Keys) {
+                    noLongerTracked.Add(key);
+                }
+
+                foreach(var stateVector in stateVectors.Where(r => !String.IsNullOrEmpty(r.Icao24))) {
+                    if(noLongerTracked.Contains(stateVector.Icao24)) {
+                        noLongerTracked.Remove(stateVector.Icao24);
+                    }
+
+                    if(!_Icao24ToAircraftMap.TryGetValue(stateVector.Icao24, out var aircraft)) {
+                        aircraft = new Aircraft(stateVector.Icao24);
+                        _Icao24ToAircraftMap.Add(stateVector.Icao24, aircraft);
+                    }
+                    aircraft.ApplyStateVector(stateVector, Version);
+                }
+
+                foreach(var missingIcao24 in noLongerTracked) {
+                    _Icao24ToAircraftMap.Remove(missingIcao24);
+                }
             }
         }
 
-        public byte[] Dequeue()
+        public IList<Aircraft> GetCloneSnapshot()
         {
-            byte[] result = null;
+            var result = new List<Aircraft>();
 
             lock(_SyncLock) {
-                if(_BytesQueue.Count > 0) {
-                    result = _BytesQueue.Dequeue();
+                foreach(var aircraft in _Icao24ToAircraftMap.Values) {
+                    result.Add(
+                        new Aircraft(aircraft)
+                    );
                 }
             }
 
