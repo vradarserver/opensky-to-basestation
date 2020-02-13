@@ -29,9 +29,10 @@ them into a BaseStation format network feed.
 
 ### Network Server Options
 
-| Option      | Value      | Description |
-| -           | -          | -           |
-| ```-port``` | 1024-65535 | The port to listen to for incoming connections (defaults to ```20003```) |
+| Option            | Value      | Description |
+| -                 | -          | -           |
+| ```-port```       | 1024-65535 | The port to listen to for incoming connections (defaults to ```20003```) |
+| ```-tickleSecs``` | seconds    | Seconds between aircraft list tickles, 0 to switch off (defaults to ```25```) |
 
 ### Diagnostic Options
 | Option              | Value    | Description |
