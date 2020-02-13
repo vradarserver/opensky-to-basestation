@@ -2,6 +2,33 @@
 A command-line utility that fetches state vectors from the Open Sky network and converts
 them into a BaseStation format network feed.
 
+## How to install
+
+1. Download the .NET Core 3.1 runtime for your platform:
+
+   https://dotnet.microsoft.com/download/dotnet-core/3.1
+
+   Choose the **.NET CORE RUNTIME** option. You don't need the SDK version unless you intend building the program.
+
+2. Either download the pre-compiled binaries from the releases page or compile your own build:
+
+   https://github.com/vradarserver/opensky-to-basestation/releases
+
+3. Unzip the pre-compiled binaries and copy to a folder of your choosing.
+
+### Windows
+
+To run the application under Windows:
+
+```opensky-to-basestation -rebroadcast```
+
+### Other platforms
+
+To run the application under Linux and OSX:
+
+```dotnet opensky-to-basestation.dll -rebroadcast```
+
+
 ## Command-line parameters
 
 **Usage**: \<command> [options]
@@ -42,6 +69,7 @@ them into a BaseStation format network feed.
 ## Compilation Pre-requisites
 
 You will need the latest version of Visual Studio 2019 Community edition. When you choose the components to install you need
-to tick the option for **.NET desktop development**. In the **Individual Components** tab make sure that the ```.NET Core 3.1 SDK``` is ticked. Once .NET Core 3.1 is no longer the bleeding edge you might see the option called ```.NET Core 3.1 Runtime``` instead.
+to tick the option for **.NET desktop development**. In the **Individual Components** tab make sure that the
+```.NET Core 3.1 SDK``` is ticked.
 
-
+Once .NET Core 3.1 is no longer the bleeding edge you might see the option called ```.NET Core 3.1 Runtime``` instead.
