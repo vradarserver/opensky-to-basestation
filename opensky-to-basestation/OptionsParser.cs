@@ -47,7 +47,7 @@ namespace OpenSkyToBaseStation
                         Usage(null);
                         break;
                     case "-anoninterval":
-                        result.AnonymousIntervalSeconds = ParseInt(UseNextArg(arg, nextArg, ref i));
+                        result.AnonIntervalSeconds = ParseInt(UseNextArg(arg, nextArg, ref i));
                         break;
                     case "-anonrooturl":
                         result.AnonRootUrl = UseNextArg(arg, nextArg, ref i);
@@ -81,6 +81,9 @@ namespace OpenSkyToBaseStation
                         break;
                     case "-rebroadcast":
                         result.Command = ParseCommand(result, Command.Rebroadcast);
+                        break;
+                    case "-ticklesecs":
+                        result.TickleIntervalSeconds = ParseInt(UseNextArg(arg, nextArg, ref i));
                         break;
                     case "-user":
                         result.UserName = UseNextArg(arg, nextArg, ref i);
@@ -160,7 +163,7 @@ namespace OpenSkyToBaseStation
             Console.WriteLine($"  -password     <text>     OpenSky network password [{defaults.Password}]");
             Console.WriteLine($"  -anonRootUrl  <url>      Root URL for anonymous OpenSky API calls [{defaults.AnonRootUrl}]");
             Console.WriteLine($"  -userRootUrl  <url>      Root URL for logged-in OpenSky API calls [{defaults.UserRootUrl}]");
-            Console.WriteLine($"  -anonInterval <secs>     Seconds between fetches for anonymous users [{defaults.AnonymousIntervalSeconds}]");
+            Console.WriteLine($"  -anonInterval <secs>     Seconds between fetches for anonymous users [{defaults.AnonIntervalSeconds}]");
             Console.WriteLine($"  -userInterval <secs>     Seconds between fetches for logged-in users [{defaults.UserIntervalSeconds}]");
             Console.WriteLine($"  -icao24       <hex-list> Hyphen-separated ICAOs to fetch from OpenSky [{String.Join("-", defaults.Icao24s)}]");
             Console.WriteLine($"  -lamin        <float>    Lower bound for latitude [{defaults.LatitudeHigh}]");
@@ -170,6 +173,7 @@ namespace OpenSkyToBaseStation
             Console.WriteLine();
             Console.WriteLine($"REBROADCAST SERVER");
             Console.WriteLine($"  -port         <1-65535>  The port to listen to for incoming connections [{defaults.Port}]");
+            Console.WriteLine($"  -tickleSecs   <secs>     Seconds between aircraft list tickles, 0 to switch off [{defaults.TickleIntervalSeconds}]");
             Console.WriteLine();
             Console.WriteLine($"DIAGNOSTICS");
             Console.WriteLine($"  -jsonFileName <filename> The full path to a file that the OpenSky JSON will be saved to [{defaults.OpenSkyJsonFileName}]");

@@ -9,9 +9,9 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OF THE SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,10 +25,12 @@ namespace OpenSkyToBaseStation
     {
         private HttpClient                  _HttpClient;
         private Timer                       _CallOpenSkyTimer;
+        private Timer                       _TickleAircraftListTimer;
         private string                      _RequestUrl;
         private NetworkListener             _NetworkListener;
         private AircraftList                _AircraftList = new AircraftList();
         private BaseStationMessageGenerator _MessageGenerator = new BaseStationMessageGenerator();
+        private DateTime                    _AircraftListLastSentUtc;
 
         public override bool Run()
         {
@@ -47,6 +49,9 @@ namespace OpenSkyToBaseStation
 
             StartNetworkListener();
             StartCallingOpenSkyApi();
+            if(Options.TickleIntervalSeconds > 0) {
+                StartTickleTimer();
+            }
             SuspendThreadUntilUserWantsToQuit();
             Cleanup();
 
@@ -83,6 +88,17 @@ namespace OpenSkyToBaseStation
             _CallOpenSkyTimer.Start();
         }
 
+        private void StartTickleTimer()
+        {
+            _TickleAircraftListTimer = new Timer() {
+                AutoReset = false,
+                Enabled = false,
+                Interval = 500,
+            };
+            _TickleAircraftListTimer.Elapsed += TickleAircraftListTimer_Elapsed;
+            _TickleAircraftListTimer.Start();
+        }
+
         private static void SuspendThreadUntilUserWantsToQuit()
         {
             Console.WriteLine();
@@ -97,6 +113,7 @@ namespace OpenSkyToBaseStation
         {
             _CallOpenSkyTimer.Enabled = false;
             _CallOpenSkyTimer = null;
+            _TickleAircraftListTimer = null;
         }
 
         private string BuildRequestUrl()
@@ -142,6 +159,24 @@ namespace OpenSkyToBaseStation
             }
         }
 
+        private void TickleAircraftListTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+
+            try {
+                var lastSent = _AircraftListLastSentUtc;
+                if(lastSent != default(DateTime) && lastSent.AddSeconds(Options.TickleIntervalSeconds) < DateTime.UtcNow) {
+                    SendAircraftList(-1L);
+                }
+            } catch(Exception ex) {
+                Console.WriteLine($"Caught exception tickling aircraft list: {ex}");
+            } finally {
+                var timer = _TickleAircraftListTimer;
+                if(timer != null) {
+                    timer.Start();
+                }
+            }
+        }
+
         private async Task FetchFromOpenSky()
         {
             var response = await _HttpClient.GetAsync(_RequestUrl);
@@ -156,12 +191,27 @@ namespace OpenSkyToBaseStation
                     var allStateVectors = JsonConvert.DeserializeObject<AllStateVectorsResponseModel>(jsonText);
                     var versionBeforeChanges = _AircraftList.Version;
                     _AircraftList.ApplyStateVectors(allStateVectors.StateVectors);
-                    var aircraftList = _AircraftList.GetCloneSnapshot();
-                    _NetworkListener.SendBytes(
-                        _MessageGenerator.GenerateMessageBytes(aircraftList, versionBeforeChanges)
-                    );
+                    SendAircraftList(versionBeforeChanges);
                 }
             }
+        }
+
+        private void SendAircraftList(long versionBeforeChanges)
+        {
+            var aircraftList = _AircraftList.GetCloneSnapshot();
+
+            if(versionBeforeChanges == -1L) {
+                versionBeforeChanges = aircraftList
+                    .Select(r => r.Version)
+                    .DefaultIfEmpty()
+                    .Max();
+            }
+
+            _NetworkListener.SendBytes(
+                _MessageGenerator.GenerateMessageBytes(aircraftList, versionBeforeChanges)
+            );
+
+            _AircraftListLastSentUtc = DateTime.UtcNow;
         }
 
         private void SaveJsonToDiagnosticFile(string jsonText)
