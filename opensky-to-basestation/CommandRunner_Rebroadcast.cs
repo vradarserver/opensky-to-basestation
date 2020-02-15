@@ -37,10 +37,11 @@ namespace OpenSkyToBaseStation
             Console.WriteLine($"Rebroadcast OpenSky state");
             Console.WriteLine($"User:       {(Options.IsAnonymous ? "Anonymous" : Options.UserName)}");
             Console.WriteLine($"Root URL:   {Options.ObsfucatedRootUrl}");
-            Console.WriteLine($"Interval:   {Options.IntervalSeconds} seconds");
+            Console.WriteLine($"Interval:   Every {Options.IntervalSeconds} seconds");
             Console.WriteLine($"Icao24s:    {(Options.Icao24s.Count == 0 ? "all" : String.Join("-", Options.Icao24s))}");
-            Console.WriteLine($"Bounds:     {(!Options.HasBoundingBox ? "entire earth" : Options.BoundsDescription)}");
+            Console.WriteLine($"Bounds:     {(!Options.HasBoundingBox ? "World" : Options.BoundsDescription)}");
             Console.WriteLine($"Listen on:  {Options.Port}");
+            Console.WriteLine($"Tickle:     Every {Options.TickleIntervalSeconds} seconds");
 
             if(!String.IsNullOrEmpty(Options.OpenSkyJsonFileName)) {
                 Console.WriteLine($"JSON save:  {Options.OpenSkyJsonFileName}");
@@ -149,7 +150,7 @@ namespace OpenSkyToBaseStation
             try {
                 await FetchFromOpenSky();
             } catch(Exception ex) {
-                Console.WriteLine($"Caught exception in fetching OpenSky: {ex}");
+                Console.WriteLine($"[{DateTime.Now}] Caught exception in fetching OpenSky: {ex.Message}");
             } finally {
                 var timer = _CallOpenSkyTimer;
                 if(timer != null) {
@@ -168,7 +169,7 @@ namespace OpenSkyToBaseStation
                     SendAircraftList(-1L);
                 }
             } catch(Exception ex) {
-                Console.WriteLine($"Caught exception tickling aircraft list: {ex}");
+                Console.WriteLine($"[{DateTime.Now}] Caught exception tickling aircraft list: {ex.Message}");
             } finally {
                 var timer = _TickleAircraftListTimer;
                 if(timer != null) {
@@ -181,7 +182,7 @@ namespace OpenSkyToBaseStation
         {
             var response = await _HttpClient.GetAsync(_RequestUrl);
             if(!response.IsSuccessStatusCode) {
-                Console.WriteLine($"Warning: OpenSky fetch failed, status {response.StatusCode}");
+                Console.WriteLine($"[{DateTime.Now}] Warning: OpenSky fetch failed, status {(int)response.StatusCode} {response.StatusCode}");
             } else {
                 var jsonText = await response.Content.ReadAsStringAsync();
                 if(jsonText != null) {
@@ -220,7 +221,7 @@ namespace OpenSkyToBaseStation
                 try {
                     File.WriteAllText(Options.OpenSkyJsonFileName, jsonText);
                 } catch(Exception ex) {
-                    Console.WriteLine($"Could not save JSON to {Options.OpenSkyJsonFileName}: {ex.Message}");
+                    Console.WriteLine($"[{DateTime.Now}] Could not save JSON to {Options.OpenSkyJsonFileName}: {ex.Message}");
                 }
             }
         }
