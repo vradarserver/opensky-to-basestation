@@ -2,6 +2,14 @@
 A command-line utility that fetches state vectors from the Open Sky network and converts
 them into a BaseStation format network feed.
 
+# OpenSky Rate Limits
+
+As of July 2022 OpenSky have introduced rate limits that make it useless for aircraft tracking programs
+such as Virtual Radar Server. Anonymous users are now limited to 8 minutes of tracking calls and registered
+users get just under an hour and a half of tracking calls per day.
+
+OpenSky is no longer a viable source of ADSB data.
+
 ## How to install
 
 1. Download the .NET Core 3.1 runtime for your platform:
