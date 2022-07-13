@@ -2,7 +2,7 @@
 
 As of July 2022 OpenSky have introduced rate limits that make it useless for aircraft tracking programs
 such as Virtual Radar Server. Anonymous users are now limited to 8 minutes of tracking calls and registered
-users get just under an hour and a half of tracking calls per day.
+users get just under an hour and a half of tracking calls per day (https://openskynetwork.github.io/opensky-api/rest.html#limitations).
 
 For most VRS users OpenSky is no longer a viable source of ADSB data. For those users that only want to take
 the OpenSky feed in short bursts, read on.
