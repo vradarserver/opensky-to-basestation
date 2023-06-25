@@ -79,6 +79,7 @@ namespace OpenSkyToBaseStation
         private void StartCallingOpenSkyApi()
         {
             _HttpClient = new HttpClient();
+            _HttpClient.DefaultRequestHeaders.Add("Authorization", "Basic " + Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes(Options.UserName + ":" + Options.Password)));
             _RequestUrl = BuildRequestUrl();
             _CallOpenSkyTimer = new Timer() {
                 AutoReset = false,
@@ -184,6 +185,9 @@ namespace OpenSkyToBaseStation
             if(!response.IsSuccessStatusCode) {
                 Console.WriteLine($"[{DateTime.Now}] Warning: OpenSky fetch failed, status {(int)response.StatusCode} {response.StatusCode}");
             } else {
+                string resHeaderStr = response.Headers.ToString();
+                string xRateLimitStr = resHeaderStr.Substring(resHeaderStr.IndexOf("X-Rate-Limit-Remaining"));
+                Console.WriteLine(xRateLimitStr); // X-Rate-Limit-Remaining;
                 var jsonText = await response.Content.ReadAsStringAsync();
                 if(jsonText != null) {
                     ShowOpenSkyStateFetched();
