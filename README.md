@@ -13,11 +13,12 @@ them into a BaseStation format network feed.
 
 ## How to install
 
-1. Download the .NET Core 3.1 runtime for your platform:
+1. Download the .NET Core 6 runtime for your platform:
 
-   https://dotnet.microsoft.com/download/dotnet-core/3.1
+   https://dotnet.microsoft.com/en-us/download/dotnet/6.0
 
-   Choose the **.NET CORE RUNTIME** option. You don't need the SDK version unless you intend building the program.
+   Choose the **.NET RUNTIME** option. You don't need the SDK version unless you intend building the program.
+   Likewise the desktop version isn't necessary, although it will also work.
 
 2. Either download the pre-compiled binaries from the releases page or compile your own build:
 
@@ -76,8 +77,8 @@ To run the application under Linux and OSX:
 
 ## Compilation Pre-requisites
 
-You will need the latest version of Visual Studio 2019 Community edition. When you choose the components to install you need
-to tick the option for **.NET desktop development**. In the **Individual Components** tab make sure that the
-```.NET Core 3.1 SDK``` is ticked.
+You will need the latest version of Visual Studio 2022 Community edition.
 
-Once .NET Core 3.1 is no longer the bleeding edge you might see the option called ```.NET Core 3.1 Runtime``` instead.
+When you choose the components to install you need to tick the option for **.NET desktop development**.
+In the **Individual Components** tab make sure that the `.NET 6.0 Runtime (Long Term Support)` is ticked.
+
