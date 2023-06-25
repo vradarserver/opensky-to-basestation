@@ -37,7 +37,7 @@ namespace OpenSkyToBaseStation
         {
             Console.WriteLine($"Rebroadcast OpenSky state");
             Console.WriteLine($"User:       {(Options.IsAnonymous ? "Anonymous" : Options.UserName)}");
-            Console.WriteLine($"Root URL:   {Options.ObsfucatedRootUrl}");
+            Console.WriteLine($"Root URL:   {Options.RootUrl}");
             Console.WriteLine($"Interval:   Every {Options.IntervalSeconds} seconds");
             Console.WriteLine($"Icao24s:    {(Options.Icao24s.Count == 0 ? "all" : String.Join("-", Options.Icao24s))}");
             Console.WriteLine($"Bounds:     {(!Options.HasBoundingBox ? "World" : Options.BoundsDescription)}");
@@ -80,7 +80,7 @@ namespace OpenSkyToBaseStation
         private void StartCallingOpenSkyApi()
         {
             _HttpClient = new HttpClient();
-            if(!String.IsNullOrEmpty(Options.UserName) && !String.IsNullOrEmpty(Options.Password)) {
+            if(!Options.IsAnonymous) {
                 _HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(

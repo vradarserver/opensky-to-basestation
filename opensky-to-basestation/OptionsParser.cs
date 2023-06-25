@@ -46,12 +46,6 @@ namespace OpenSkyToBaseStation
                     case "--?":
                         Usage(null);
                         break;
-                    case "-anoninterval":
-                        result.AnonIntervalSeconds = ParseInt(UseNextArg(arg, nextArg, ref i));
-                        break;
-                    case "-anonrooturl":
-                        result.AnonRootUrl = UseNextArg(arg, nextArg, ref i);
-                        break;
                     case "-icao24":
                         result
                             .Icao24s.AddRange(
@@ -79,8 +73,14 @@ namespace OpenSkyToBaseStation
                     case "-password":
                         result.Password = UseNextArg(arg, nextArg, ref i);
                         break;
+                    case "-port":
+                        result.Port = ParseInt(UseNextArg(arg, nextArg, ref i));
+                        break;
                     case "-rebroadcast":
                         result.Command = ParseCommand(result, Command.Rebroadcast);
+                        break;
+                    case "-rooturl":
+                        result.RootUrl = UseNextArg(arg, nextArg, ref i);
                         break;
                     case "-ticklesecs":
                         result.TickleIntervalSeconds = ParseInt(UseNextArg(arg, nextArg, ref i));
@@ -90,12 +90,6 @@ namespace OpenSkyToBaseStation
                         break;
                     case "-userinterval":
                         result.UserIntervalSeconds = ParseInt(UseNextArg(arg, nextArg, ref i));
-                        break;
-                    case "-userrooturl":
-                        result.UserRootUrl = UseNextArg(arg, nextArg, ref i);
-                        break;
-                    case "-port":
-                        result.Port = ParseInt(UseNextArg(arg, nextArg, ref i));
                         break;
                     default:
                         Usage($"Invalid argument {arg}");
@@ -164,8 +158,7 @@ namespace OpenSkyToBaseStation
             Console.WriteLine($"OPENSKY PARAMETERS");
             Console.WriteLine($"  -user         <text>     OpenSky network username [{defaults.UserName}]");
             Console.WriteLine($"  -password     <text>     OpenSky network password [{defaults.Password}]");
-            Console.WriteLine($"  -anonRootUrl  <url>      Root URL for anonymous OpenSky API calls [{defaults.AnonRootUrl}]");
-            Console.WriteLine($"  -userRootUrl  <url>      Root URL for logged-in OpenSky API calls [{defaults.UserRootUrl}]");
+            Console.WriteLine($"  -rootUrl      <url>      Root URL for OpenSky API calls [{defaults.RootUrl}]");
             Console.WriteLine($"  -anonInterval <secs>     Seconds between fetches for anonymous users [{defaults.AnonIntervalSeconds}]");
             Console.WriteLine($"  -userInterval <secs>     Seconds between fetches for logged-in users [{defaults.UserIntervalSeconds}]");
             Console.WriteLine($"  -icao24       <hex-list> Hyphen-separated ICAOs to fetch from OpenSky [{String.Join("-", defaults.Icao24s)}]");

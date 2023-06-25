@@ -34,24 +34,9 @@ namespace OpenSkyToBaseStation
         public bool IsAnonymous => String.IsNullOrWhiteSpace(UserName);
 
         /// <summary>
-        /// The API root URL for anonymous calls.
+        /// The API root URL.
         /// </summary>
-        public string AnonRootUrl { get; set; } = "https://opensky-network.org/api";
-
-        /// <summary>
-        /// The API root URL for calls with credentials.
-        /// </summary>
-        public string UserRootUrl { get; set; } = "https://{user}:{password}@opensky-network.org/api";
-
-        /// <summary>
-        /// <see cref="UserRootUrl"/> if credentials have been supplied, otherwise <see cref="AnonRootUrl"/>.
-        /// </summary>
-        public string RootUrl => IsAnonymous ? AnonRootUrl : UserRootUrl.Replace("{user}", UserName).Replace("{password}", Password);
-
-        /// <summary>
-        /// <see cref="RootUrl"/> with the password replaced with asterisks.
-        /// </summary>
-        public string ObsfucatedRootUrl => IsAnonymous ? AnonRootUrl : UserRootUrl.Replace("{user}", UserName).Replace("{password}", new String('*', Password?.Length ?? 0));
+        public string RootUrl { get; set; } = "https://opensky-network.org/api";
 
         /// <summary>
         /// The number of seconds to wait between fetches when no credentials have been supplied. Do not set this lower
