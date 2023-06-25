@@ -53,8 +53,7 @@ To run the application under Linux and OSX:
 | -                   | -        | -           |
 | ```-user```         | text     | OpenSky network username (defaults to anonymous access) |
 | ```-password```     | text     | OpenSky network password |
-| ```-anonRootUrl```  | url      | Root URL for anonymous OpenSky API calls (defaults to ```https://opensky-network.org/api```) |
-| ```-userRootUrl```  | url      | Root URL for logged-in OpenSky API calls (defaults to ```https://{user}:{password}@opensky-network.org/api```) |
+| ```-rootUrl```      | url      | Root URL for OpenSky API calls (defaults to ```https://opensky-network.org/api```) |
 | ```-anonInterval``` | seconds  | Seconds between fetches for anonymous users (defaults to ```10```) |
 | ```-userInterval``` | seconds  | Seconds between fetches for logged-in users (defaults to ```5```) |
 | ```-icao24```       | hex-list | Hyphen-separated ICAOs to fetch from OpenSky (defaults to all aircraft) |
