@@ -13,6 +13,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -79,7 +80,14 @@ namespace OpenSkyToBaseStation
         private void StartCallingOpenSkyApi()
         {
             _HttpClient = new HttpClient();
-            _HttpClient.DefaultRequestHeaders.Add("Authorization", "Basic " + Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes(Options.UserName + ":" + Options.Password)));
+            if(!String.IsNullOrEmpty(Options.UserName) && !String.IsNullOrEmpty(Options.Password)) {
+                _HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                    "Basic",
+                    Convert.ToBase64String(
+                        Encoding.ASCII.GetBytes($"{Options.UserName}:{Options.Password}")
+                    )
+                );
+            }
             _RequestUrl = BuildRequestUrl();
             _CallOpenSkyTimer = new Timer() {
                 AutoReset = false,
@@ -185,12 +193,13 @@ namespace OpenSkyToBaseStation
             if(!response.IsSuccessStatusCode) {
                 Console.WriteLine($"[{DateTime.Now}] Warning: OpenSky fetch failed, status {(int)response.StatusCode} {response.StatusCode}");
             } else {
-                string resHeaderStr = response.Headers.ToString();
-                string xRateLimitStr = resHeaderStr.Substring(resHeaderStr.IndexOf("X-Rate-Limit-Remaining"));
-                Console.WriteLine(xRateLimitStr); // X-Rate-Limit-Remaining;
+                var xRateLimit = response.Headers.TryGetValues("X-Rate-Limit-Remaining", out var values)
+                    ? String.Join(", ", values)
+                    : "";
+
                 var jsonText = await response.Content.ReadAsStringAsync();
                 if(jsonText != null) {
-                    ShowOpenSkyStateFetched();
+                    ShowOpenSkyStateFetched($"Credits remaining: {xRateLimit}");
                     SaveJsonToDiagnosticFile(jsonText);
 
                     var allStateVectors = JsonConvert.DeserializeObject<AllStateVectorsResponseModel>(jsonText);
@@ -231,8 +240,9 @@ namespace OpenSkyToBaseStation
         }
 
         private int _IndicatorPhase;
+        private int _PreviousSuffixLength;
 
-        private void ShowOpenSkyStateFetched()
+        private void ShowOpenSkyStateFetched(string suffixText)
         {
             var ch = '\0';
             switch(_IndicatorPhase) {
@@ -241,9 +251,16 @@ namespace OpenSkyToBaseStation
                 case 2: ch = '-'; break;
                 case 3: ch = '\\'; break;
             }
-            Console.Write(ch);
-            Console.CursorLeft--;
             _IndicatorPhase = ++_IndicatorPhase % 4;
+
+            suffixText ??= "";
+            var clearPreviousSuffix = suffixText.Length >= _PreviousSuffixLength
+                ? ""
+                : new String(' ', _PreviousSuffixLength - suffixText.Length);
+            _PreviousSuffixLength = suffixText.Length;
+
+            Console.Write($"{ch} {suffixText}{clearPreviousSuffix}");
+            Console.SetCursorPosition(0, Console.CursorTop);
         }
     }
 }
