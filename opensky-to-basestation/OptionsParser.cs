@@ -29,19 +29,16 @@ namespace OpenSkyToBaseStation
         {
             var result = new Options();
 
-            if (args.Length == 0)
-            {
+            if(args.Length == 0) {
                 Usage(null);
             }
 
-            for (var i = 0; i < args.Length; ++i)
-            {
+            for(var i = 0;i < args.Length;++i) {
                 var arg = (args[i] ?? "");
                 var normalisedArg = arg.ToLower();
                 var nextArg = i + 1 < args.Length ? args[i + 1] : null;
 
-                switch (normalisedArg)
-                {
+                switch(normalisedArg) {
                     case "/?":
                     case "-help":
                     case "-?":
@@ -111,8 +108,7 @@ namespace OpenSkyToBaseStation
 
         private static Command ParseCommand(Options options, Command command)
         {
-            if (options.Command != Command.None)
-            {
+            if(options.Command != Command.None) {
                 Usage($"Cannot specify both {options.Command} and {command} commands");
             }
 
@@ -121,8 +117,7 @@ namespace OpenSkyToBaseStation
 
         private static string UseNextArg(string arg, string nextArg, ref int argIndex)
         {
-            if (String.IsNullOrWhiteSpace(nextArg))
-            {
+            if(String.IsNullOrWhiteSpace(nextArg)) {
                 Usage($"{arg} argument missing");
             }
             ++argIndex;
@@ -132,12 +127,9 @@ namespace OpenSkyToBaseStation
 
         private static T ParseEnum<T>(string arg)
         {
-            try
-            {
+            try {
                 return (T)Enum.Parse(typeof(T), arg ?? "", ignoreCase: true);
-            }
-            catch (ArgumentException)
-            {
+            } catch(ArgumentException) {
                 Usage($"{arg} is not a recognised {typeof(T).Name} value");
                 throw;
             }
@@ -145,8 +137,7 @@ namespace OpenSkyToBaseStation
 
         private static int ParseInt(string arg)
         {
-            if (!int.TryParse(arg, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
-            {
+            if(!int.TryParse(arg, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result)) {
                 Usage($"{arg} is not an integer");
             }
 
@@ -155,8 +146,7 @@ namespace OpenSkyToBaseStation
 
         private static double ParseDouble(string arg)
         {
-            if (!double.TryParse(arg, NumberStyles.Float, CultureInfo.InvariantCulture, out var result))
-            {
+            if(!double.TryParse(arg, NumberStyles.Float, CultureInfo.InvariantCulture, out var result)) {
                 Usage($"{arg} is not a floating point value (remember to use . for the decimal point)");
             }
 
@@ -191,8 +181,7 @@ namespace OpenSkyToBaseStation
             Console.WriteLine($"DIAGNOSTICS");
             Console.WriteLine($"  -jsonFileName <filename> The full path to a file that the OpenSky JSON will be saved to [{defaults.OpenSkyJsonFileName}]");
 
-            if (!String.IsNullOrEmpty(message))
-            {
+            if(!String.IsNullOrEmpty(message)) {
                 Console.WriteLine();
                 Console.WriteLine(message);
             }
